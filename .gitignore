@@ -1,0 +1,11 @@
+*.sln
+*.exe
+*.out
+*.app
+*.vcxproj*
+/x64/
+/Debug/
+/Release/
+/.vs/
+*.dll
+*.lib
