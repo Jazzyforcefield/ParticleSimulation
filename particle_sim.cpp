@@ -120,13 +120,13 @@ int main(int argc, char ** argv) {
 
   // Test variables
   glm::vec3 position = glm::vec3(0.f, 0.f, 0.f);
-  glm::vec3 velocity = glm::vec3(0.f, 50.f, 0.f);
+  glm::vec3 velocity = glm::vec3(0.f, 7.f, 0.f);
   glm::vec3 velocity2 = glm::vec3(5.f, 10.f, 1.f);
   glm::vec3 velocity3 = glm::vec3(0.f, 5.f, 0.f);
   glm::vec3 acceleration = glm::vec3(0.f, 0.f, 0.f);
 
   // Benchmark
-  test_particle_emitter = new ParticleEmitter(position, velocity, 4.f, WATER);
+  test_particle_emitter = new ParticleEmitter(position, velocity, 2.f, WATER);
 
   // Normal
   //test_particle_emitter = new ParticleEmitter(position, velocity2, 5.f, WATER);

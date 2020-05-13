@@ -159,14 +159,15 @@ void FireParticle::UpdateParticle(float dt) {
     vertices_[27] = 1.f;
     vertices_[28] = 0.5f;
   } else if (lifetime_ < 1.f) {
-    vertices_[3] = 2.f;
-    vertices_[4] = 1.f;
-    vertices_[11] = 2.f;
-    vertices_[12] = 1.f;
-    vertices_[19] = 2.f;
-    vertices_[20] = 1.f;
-    vertices_[27] = 2.f;
-    vertices_[28] = 1.f;
+    vertices_[3] = lifetime_;
+    vertices_[4] = lifetime_ / 4.f;
+    vertices_[11] = lifetime_;
+    vertices_[12] = lifetime_ / 4.f;
+    vertices_[19] = lifetime_;
+    vertices_[20] = lifetime_ / 4.f;
+    vertices_[27] = lifetime_;
+    vertices_[28] = lifetime_ / 4.f;
+
   } else if (lifetime_ < 1.5f) {
     vertices_[3] = lifetime_;
     vertices_[4] = lifetime_ / 2.f;
@@ -177,21 +178,22 @@ void FireParticle::UpdateParticle(float dt) {
     vertices_[27] = lifetime_;
     vertices_[28] = lifetime_ / 2.f;
   } else {
-    vertices_[3] = lifetime_;
-    vertices_[4] = lifetime_ / 4.f;
-    vertices_[11] = lifetime_;
-    vertices_[12] = lifetime_ / 4.f;
-    vertices_[19] = lifetime_;
-    vertices_[20] = lifetime_ / 4.f;
-    vertices_[27] = lifetime_;
-    vertices_[28] = lifetime_ / 4.f;
+    vertices_[3] = 2.f;
+    vertices_[4] = 2.f;
+    vertices_[11] = 2.f;
+    vertices_[12] = 2.f;
+    vertices_[19] = 2.f;
+    vertices_[20] = 2.f;
+    vertices_[27] = 2.f;
+    vertices_[28] = 2.f;
   }
 
   // Update position and velocity
   position_ += velocity_ * dt;
   velocity_ += acceleration_ * dt;
-  acceleration_.x = start_.x - 2.f * position_.x;
-  acceleration_.z = start_.z - 2.f * position_.z;
+
+  acceleration_.x = 1.1f * (start_.x - 1.f * position_.x - velocity_.x);
+  acceleration_.z = 1.1f * (start_.z - 1.f * position_.z - velocity_.z);
 }
 
 void FireParticle::DrawParticle(GLuint uniform_model) {
