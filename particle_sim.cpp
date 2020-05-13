@@ -38,6 +38,7 @@
 #include <iostream>
 
 #include "camera.h"
+#include "particle_emitter.h"
 
 using namespace std;
 
@@ -92,7 +93,10 @@ GLuint vao;
 GLuint vbo[2];
 
 /******** All other needed declarations and parameters ********/
-Camera * camera;                                              //
+Camera * camera;
+extern glm::vec3 eye_position = glm::vec3(0, 0, 30);
+ParticleEmitter * test_particle_emitter;
+Particle * test_particle;
 /**************************************************************/
 
 int main(int argc, char ** argv) {
@@ -108,14 +112,21 @@ int main(int argc, char ** argv) {
 
   // Create a window (offsetx, offsety, width, height, flags)
   SDL_Window* window = SDL_CreateWindow(
-                       "Motion Planning", screen_width / 2, screen_height / 2,
+                       "Particle Simulation", screen_width / 2, screen_height / 2,
                        screen_width, screen_height, SDL_WINDOW_OPENGL);
   aspect = screen_width / (float)screen_height;  // aspect ratio (needs to be updated if the window is resized
-  camera = new Camera(glm::vec3(0, 0, 30), 800.f, 600.f);
+  camera = new Camera(eye_position, 800.f, 600.f);
 
+  // Test variables
+  glm::vec3 position = glm::vec3(0.f, 0.f, 0.f);
+  glm::vec3 velocity = glm::vec3(0.f, 5.f, 0.f);
+  glm::vec3 acceleration = glm::vec3(0.f, 0.f, 0.f);
 
+  
+  test_particle_emitter = new ParticleEmitter(position, velocity, 3.f, WATER);
+  test_particle_emitter->SetInterval(0.2f);
 
-
+  test_particle = new WaterParticle(position, velocity, acceleration, 10000.f, 2.f);
 
 
 
@@ -149,13 +160,6 @@ int main(int argc, char ** argv) {
 
 
 
-
-
-
-
-
-
-
   // Initial vertex setup
   // Build a Vertex Array Object. This stores the VBO and attribute mappings in one object
   glGenVertexArrays(1, &vao); // Create a VAO
@@ -164,11 +168,11 @@ int main(int argc, char ** argv) {
   // Allocate memory on the graphics card to store geometry (vertex buffer object)
   glGenBuffers(2, vbo);  // Create 2 buffers called vbo
   glBindBuffer(GL_ARRAY_BUFFER, vbo[0]); // Set the vbo as the active array buffer (Only one buffer can be active at a time)
-  glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(float) * cfg->graph_->size_, cfg->graph_->graph_vertices_, GL_STATIC_DRAW); // upload vertices to vbo
+
   
   
-
-
+  // Allocate memory and store geometry, for now, until I figure out how to do it
+  test_particle->InitGraphics();
 
 
 
@@ -237,11 +241,11 @@ int main(int argc, char ** argv) {
   
 
   glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-  glBufferData(GL_ARRAY_BUFFER, 3 * cfg->graph_->size_* sizeof(float),
-      cfg->graph_->graph_normals_, GL_STATIC_DRAW); // upload normals to vbo
+  //glBufferData(GL_ARRAY_BUFFER, 3 * cfg->graph_->size_* sizeof(float),
+  //    cfg->graph_->graph_normals_, GL_STATIC_DRAW); // upload normals to vbo
   GLint normAttrib = glGetAttribLocation(shaderProgram, "inNormal");
   glVertexAttribPointer(normAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(normAttrib);
+  //glEnableVertexAttribArray(normAttrib);
 
 
   // Where to model, view, and projection matricies are stored on the GPU
@@ -264,6 +268,8 @@ int main(int argc, char ** argv) {
   int frame = 0;
   unsigned t0 = SDL_GetTicks();
   unsigned t1 = t0;
+
+
 
   while (!quit) {
     while (SDL_PollEvent(&windowEvent)) {
@@ -394,58 +400,16 @@ void Win2PPM(int width, int height) {
 
 void draw(float dt) {
   camera->updateCamera(dt, 800.f, 600.f);
-  for (int i = 0; i < num_agents; i++) {
-    cfg->agents_[i]->update(dt, cfg->agents_, cfg->graph_->obstacles_);
-  }
+  test_particle_emitter->UpdateParticleEmitter(dt);
+  
+  glBindVertexArray(vao);
 
-  // Remnant of poor planning and lack of understanding...
-  glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(camera->proj));
+  // I have gained understanding, as you can see by comparing my current code structure
+  // and my previous code structure
   glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(camera->view));
+  glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(camera->proj));
 
   glm::mat4 model = glm::mat4();
-  model = glm::translate(model, glm::vec3(0, 0, 0));
-  //model = glm::rotate(model, -3.1415f/2.f, glm::vec3(1, 0, 0));
 
-  glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
-
-  glBindVertexArray(vao);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-  glBufferData(GL_ARRAY_BUFFER, 8 * cfg->graph_->size_ * sizeof(float),
-               cfg->graph_->graph_vertices_, GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-  glBufferData(GL_ARRAY_BUFFER, 3 * cfg->graph_->size_ * sizeof(float),
-               cfg->graph_->graph_normals_, GL_STATIC_DRAW);
-
-  glEnable(GL_PROGRAM_POINT_SIZE);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-  
-  // Points
-  glDrawArrays(GL_POINTS, 0, cfg->graph_->size_);    // Index 0, 10 vertices
-  
-  // Connections
-  for (int i = 0; i < cfg->graph_->size_; i++) {
-    glBufferData(
-        GL_ARRAY_BUFFER,
-        16 * sizeof(float) * cfg->graph_->milestones_[i]->neighbors_size_,
-        cfg->graph_->milestones_[i]->connections_, GL_STATIC_DRAW);
-    glDrawArrays(GL_LINES, 0, cfg->graph_->milestones_[i]->neighbors_size_ * 2); 
-  }
-  
-  // Circles
-  for (int i = 0; i < cfg->graph_->obstacles_.size(); i++) {
-    glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(float) * 361,
-                 cfg->graph_->obstacles_[i]->vertices_, GL_STATIC_DRAW);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 361);
-  }
-
-
-  // Agent
-  for (int i = 0; i < num_agents; i++) {
-    float agentv[] = {
-        cfg->agents_[i]->position_.x, cfg->agents_[i]->position_.y, 0.01, 0, 1, 0, 0, 0};
-
-    glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(float), agentv, GL_STATIC_DRAW);
-    glDrawArrays(GL_POINTS, 0, 1);
-  }
-  
+  test_particle_emitter->DrawParticles(uniModel);
 }

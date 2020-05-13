@@ -57,6 +57,8 @@ void Camera::updateCamera(float dt, float width, float height)
 		glm::vec3(position.x + forwardDir.x, position.y + forwardDir.y, position.z + forwardDir.z),  //Look at point
 		glm::vec3(upDir.x, upDir.y, upDir.z)); //Up
 
+  eye_position = position;
+
 	//std::cout << "position.x = " << position.x << "   position.y = " << position.y << "   position.z = " << position.z << "\n\n";
 	//std::cout << "lookat.x = " << position.x + forwardDir.x << "   lookat.y = " << position.y + forwardDir.y << "   lookat.z = " << position.z + forwardDir.z << "\n\n";
 }

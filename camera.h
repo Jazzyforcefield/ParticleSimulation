@@ -22,6 +22,8 @@
 
 #include <cmath>
 
+extern glm::vec3 eye_position;
+
 class Camera
 {
 public:
