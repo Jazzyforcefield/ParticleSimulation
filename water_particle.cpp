@@ -7,6 +7,8 @@ WaterParticle::WaterParticle() : Particle() {
   float ypos = position_.y;
   float zpos = position_.z;
 
+  acceleration_ = glm::vec3(0.f, -20.f, 0);
+
   // Vertex format: X Y Z R G B U V
   // Upper right vertex
   vertices_[0] = xpos + particle_size_;
@@ -14,7 +16,7 @@ WaterParticle::WaterParticle() : Particle() {
   vertices_[2] = zpos;
   vertices_[3] = 0.f;
   vertices_[4] = 0.f;
-  vertices_[5] = 0.f;
+  vertices_[5] = 1.f;
   vertices_[6] = 0.f;
   vertices_[7] = 0.f;
 
@@ -24,7 +26,7 @@ WaterParticle::WaterParticle() : Particle() {
   vertices_[10] = zpos;
   vertices_[11] = 0.f;
   vertices_[12] = 0.f;
-  vertices_[13] = 0.f;
+  vertices_[13] = 1.f;
   vertices_[14] = 0.f;
   vertices_[15] = 0.f;
 
@@ -34,7 +36,7 @@ WaterParticle::WaterParticle() : Particle() {
   vertices_[18] = zpos;
   vertices_[19] = 0.f;
   vertices_[20] = 0.f;
-  vertices_[21] = 0.f;
+  vertices_[21] = 1.f;
   vertices_[22] = 0.f;
   vertices_[23] = 0.f;
 
@@ -44,7 +46,7 @@ WaterParticle::WaterParticle() : Particle() {
   vertices_[26] = zpos;
   vertices_[27] = 0.f;
   vertices_[28] = 0.f;
-  vertices_[29] = 0.f;
+  vertices_[29] = 1.f;
   vertices_[30] = 0.f;
   vertices_[31] = 0.f;
 }
@@ -56,6 +58,8 @@ WaterParticle::WaterParticle(glm::vec3 position, glm::vec3 velocity,
   float ypos = position_.y;
   float zpos = position_.z;
 
+  acceleration_ = glm::vec3(0.f, -20.f, 0);
+
   // Vertex format: X Y Z R G B U V
   // Upper left vertex
   vertices_[0] = xpos - particle_size_;
@@ -63,7 +67,7 @@ WaterParticle::WaterParticle(glm::vec3 position, glm::vec3 velocity,
   vertices_[2] = zpos;
   vertices_[3] = 0.f;
   vertices_[4] = 0.f;
-  vertices_[5] = 0.f;
+  vertices_[5] = 2.f;
   vertices_[6] = 0.f;
   vertices_[7] = 0.f;
 
@@ -73,7 +77,7 @@ WaterParticle::WaterParticle(glm::vec3 position, glm::vec3 velocity,
   vertices_[10] = zpos;
   vertices_[11] = 0.f;
   vertices_[12] = 0.f;
-  vertices_[13] = 0.f;
+  vertices_[13] = 2.f;
   vertices_[14] = 0.f;
   vertices_[15] = 0.f;
 
@@ -83,7 +87,7 @@ WaterParticle::WaterParticle(glm::vec3 position, glm::vec3 velocity,
   vertices_[18] = zpos;
   vertices_[19] = 0.f;
   vertices_[20] = 0.f;
-  vertices_[21] = 0.f;
+  vertices_[21] = 2.f;
   vertices_[22] = 0.f;
   vertices_[23] = 0.f;
 
@@ -93,7 +97,7 @@ WaterParticle::WaterParticle(glm::vec3 position, glm::vec3 velocity,
   vertices_[26] = zpos;
   vertices_[27] = 0.f;
   vertices_[28] = 0.f;
-  vertices_[29] = 0.f;
+  vertices_[29] = 2.f;
   vertices_[30] = 0.f;
   vertices_[31] = 0.f;
 }
@@ -101,7 +105,6 @@ WaterParticle::WaterParticle(glm::vec3 position, glm::vec3 velocity,
 WaterParticle::~WaterParticle() {
   // Destructor
   glDeleteBuffers(1, vbo_);
-  glDeleteVertexArrays(1, &vao_);
 }
 
 void WaterParticle::InitGraphics() {
@@ -109,7 +112,7 @@ void WaterParticle::InitGraphics() {
  // glGenVertexArrays(1, &vao_);
 
   // Binds current context to vao
- // glBindVertexArray(vao_);
+  // glBindVertexArray(vao_);
 
   // Create one new buffer
   glGenBuffers(1, vbo_);
@@ -132,17 +135,39 @@ void WaterParticle::UpdateParticle(float dt) {
     return;
   }
 
+  // Change here for color with lifetime
+  vertices_[3] = 5.f - lifetime_;
+  vertices_[4] = 5.f - lifetime_;
+  vertices_[11] = 5.f - lifetime_;
+  vertices_[12] = 5.f - lifetime_;
+  vertices_[19] = 5.f - lifetime_;
+  vertices_[20] = 5.f - lifetime_;
+  vertices_[27] = 5.f - lifetime_;
+  vertices_[28] = 5.f - lifetime_;
+
   // Update position and velocity
   position_ += velocity_ * dt;
   velocity_ += acceleration_ * dt;
+
+  // Collisions here
+  if (position_.y < 0.001f) {
+    glm::vec3 b = glm::dot(velocity_, glm::vec3(0.f, 1.f, 0.f)) *
+                  glm::vec3(0.f, 1.f, 0.f);  // Temporary for floor bouncing
+    velocity_ = velocity_ - 1.7f * b;
+    position_.y = 0.005f;//velocity_ * dt;
+  }
 }
 
 void WaterParticle::DrawParticle(GLuint uniform_model) {
   glm::mat4 model = glm::mat4();
-  model = glm::translate(model, position_) * glm::scale(model, glm::vec3(0.1f));
+  model = glm::translate(model, position_) * 
+          glm::scale(model, glm::vec3(0.05f)) *
+          glm::inverse(glm::lookAt(position_, eye_position, glm::vec3(0.f, 1.f, 0.f))) *
+          model;
+
 
   glUniformMatrix4fv(uniform_model, 1, GL_FALSE, glm::value_ptr(model));
 
-  glBindBuffer(GL_ARRAY_BUFFER, vbo_[0]);
+  //glBindBuffer(GL_ARRAY_BUFFER, vbo_[0]);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }

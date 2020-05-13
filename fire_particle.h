@@ -1,7 +1,7 @@
 // Copyright 2020 Michael Ung
 
-#ifndef WATER_PARTICLE_H_
-#define WATER_PARTICLE_H_
+#ifndef FIRE_PARTICLE_H_
+#define FIRE_PARTICLE_H_
 
 #include "glad/glad.h"
 #include "glm/glm.hpp"
@@ -12,12 +12,12 @@
 
 class ParticleEmitter;
 
-class WaterParticle : public Particle {
+class FireParticle : public Particle {
  public:
-  WaterParticle();
-  WaterParticle(glm::vec3 position, glm::vec3 velocity, glm::vec3 acceleration,
-           float lifetime = 3.f, float size = 1.f);
-  ~WaterParticle();
+  FireParticle();
+  FireParticle(glm::vec3 position, glm::vec3 velocity, glm::vec3 acceleration,
+               float lifetime = 3.f, float size = 1.f);
+  ~FireParticle();
 
   void InitGraphics();
   void UpdateParticle(float dt);
@@ -28,6 +28,7 @@ class WaterParticle : public Particle {
   // Vertices for a quad, X Y Z R G B U V
   float vertices_[32];
   GLuint vao_;
+  glm::vec3 start_;
 };
 
-#endif  // WATER_PARTICLE_H_
+#endif  // FIRE_PARTICLE_H_

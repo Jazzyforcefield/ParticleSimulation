@@ -52,7 +52,7 @@ const GLchar* vertexSource =
     "in vec3 position;"
     "in vec3 inColor;"
     "in vec3 inNormal;"
-    "const vec3 inLightDir = normalize(vec3(0,0,2));"
+    "const vec3 inLightDir = normalize(vec3(0,0,-1));"
     "out vec3 Color;"
     "out vec3 normal;"
     "out vec3 lightDir;"
@@ -63,7 +63,8 @@ const GLchar* vertexSource =
     "gl_PointSize = 5.0;"
     "   Color = inColor;"
     "   gl_Position = proj * view * model * vec4(position,1.0);"
-    "   vec4 norm4 = transpose(inverse(model)) * vec4(inNormal,1.0);"
+    "   vec4 eye = inverse(view) * vec4(0,0,0,1);"
+    "   vec4 norm4 = normalize(vec4(position, 1) - eye);"
     "   normal = normalize(norm4.xyz);"
     "   lightDir = (view * vec4(inLightDir,0)).xyz;"
     "}";
@@ -76,9 +77,9 @@ const GLchar* fragmentSource =
     "out vec4 outColor;"
     "const float ambient = .2;"
     "void main() {"
-    "   vec3 diffuseC = Color*max(dot(lightDir,normal),0);"
+    "   vec3 diffuseC = Color*max(dot(lightDir,normal) / 2,0);"
     "   vec3 ambC = Color*ambient;"
-    "   outColor = vec4(diffuseC+ambC, 1.0);"
+    "   outColor = vec4(diffuseC+ambC, 0.5);"
     "}";
 
 bool fullscreen = false;
@@ -89,12 +90,12 @@ float aspect;  // aspect ratio (needs to be updated if the window is resized)
 GLint uniModel, uniView, uniProj; // Index of where to model, view, and projection matricies are stored on the GPU
 
 //  Vertex array and buffers
-GLuint vao;
+GLuint vao[2];
 GLuint vbo[2];
 
 /******** All other needed declarations and parameters ********/
 Camera * camera;
-extern glm::vec3 eye_position = glm::vec3(0, 0, 30);
+extern glm::vec3 eye_position = glm::vec3(0, 0, 10);
 ParticleEmitter * test_particle_emitter;
 Particle * test_particle;
 /**************************************************************/
@@ -119,14 +120,26 @@ int main(int argc, char ** argv) {
 
   // Test variables
   glm::vec3 position = glm::vec3(0.f, 0.f, 0.f);
-  glm::vec3 velocity = glm::vec3(0.f, 5.f, 0.f);
+  glm::vec3 velocity = glm::vec3(0.f, 50.f, 0.f);
+  glm::vec3 velocity2 = glm::vec3(5.f, 10.f, 1.f);
+  glm::vec3 velocity3 = glm::vec3(0.f, 5.f, 0.f);
   glm::vec3 acceleration = glm::vec3(0.f, 0.f, 0.f);
 
-  
-  test_particle_emitter = new ParticleEmitter(position, velocity, 3.f, WATER);
-  test_particle_emitter->SetInterval(0.2f);
+  // Benchmark
+  test_particle_emitter = new ParticleEmitter(position, velocity, 4.f, WATER);
+
+  // Normal
+  //test_particle_emitter = new ParticleEmitter(position, velocity2, 5.f, WATER);
+
+  // Fire
+  //test_particle_emitter = new ParticleEmitter(position, velocity3, 20.f, FIRE);
+
+  test_particle_emitter->SetInterval(0.01f);
+  test_particle_emitter->ToggleVelocitySpread();
 
   test_particle = new WaterParticle(position, velocity, acceleration, 10000.f, 2.f);
+
+  //test_particle = new FireParticle(position, velocity, acceleration, 10000.f, 2.f);
 
 
 
@@ -162,18 +175,20 @@ int main(int argc, char ** argv) {
 
   // Initial vertex setup
   // Build a Vertex Array Object. This stores the VBO and attribute mappings in one object
-  glGenVertexArrays(1, &vao); // Create a VAO
-  glBindVertexArray(vao); // Bind the above created VAO to the current context
+  glGenVertexArrays(2, vao); // Create a VAO
+  glBindVertexArray(vao[0]); // Bind the above created VAO to the current context
 
   // Allocate memory on the graphics card to store geometry (vertex buffer object)
-  glGenBuffers(2, vbo);  // Create 2 buffers called vbo
-  glBindBuffer(GL_ARRAY_BUFFER, vbo[0]); // Set the vbo as the active array buffer (Only one buffer can be active at a time)
+  //glGenBuffers(2, vbo);  // Create 2 buffers called vbo
 
   
   
   // Allocate memory and store geometry, for now, until I figure out how to do it
+  //test_particle->InitGraphics();
   test_particle->InitGraphics();
+  test_particle_emitter->InitGraphics();
 
+  glBindBuffer(GL_ARRAY_BUFFER, test_particle_emitter->vbo_[0]); // Set the vbo as the active array buffer (Only one buffer can be active at a time)
 
 
 
@@ -224,6 +239,9 @@ int main(int argc, char ** argv) {
 
   glUseProgram(shaderProgram); // Set the active shader (only one can be used at a time)
 
+
+
+
   // Tell OpenGL how to set fragment shader input 
   GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
   glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);		//  CHANGE THIS FOR ATTRIB
@@ -231,21 +249,32 @@ int main(int argc, char ** argv) {
   // Binds to VBO current GL_ARRAY_BUFFER 
   glEnableVertexAttribArray(posAttrib);
 
-
-
   
   GLint colAttrib = glGetAttribLocation(shaderProgram, "inColor");
   glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
       (void*)(3 * sizeof(float)));
   glEnableVertexAttribArray(colAttrib);
-  
 
-  glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-  //glBufferData(GL_ARRAY_BUFFER, 3 * cfg->graph_->size_* sizeof(float),
-  //    cfg->graph_->graph_normals_, GL_STATIC_DRAW); // upload normals to vbo
-  GLint normAttrib = glGetAttribLocation(shaderProgram, "inNormal");
-  glVertexAttribPointer(normAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  //glEnableVertexAttribArray(normAttrib);
+
+
+
+  glBindVertexArray(vao[1]);
+  //glBindBuffer(GL_ARRAY_BUFFER, static_cast<FireParticle *>(test_particle)->vbo_[0]);
+  glBindBuffer(GL_ARRAY_BUFFER, static_cast<WaterParticle *>(test_particle)->vbo_[0]);
+  GLint posAttrib2 = glGetAttribLocation(shaderProgram, "position");
+  glVertexAttribPointer(posAttrib2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+                        0);  //  CHANGE THIS FOR ATTRIB
+  // Attribute, vals/attrib., type, normalized?, stride, offset
+  // Binds to VBO current GL_ARRAY_BUFFER
+  glEnableVertexAttribArray(posAttrib2);
+
+    GLint colAttrib2 = glGetAttribLocation(shaderProgram, "inColor");
+  glVertexAttribPointer(colAttrib2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+      (void*)(3 * sizeof(float)));
+  glEnableVertexAttribArray(colAttrib2);
+
+
+
 
 
   // Where to model, view, and projection matricies are stored on the GPU
@@ -259,6 +288,8 @@ int main(int argc, char ** argv) {
   glBindVertexArray(0);
 
   glEnable(GL_DEPTH_TEST);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   // Event Loop (Loop forever processing each event as fast as possible)
   SDL_Event windowEvent;
 
@@ -313,6 +344,9 @@ int main(int argc, char ** argv) {
 
       if (windowEvent.type == SDL_KEYDOWN && windowEvent.key.keysym.sym == SDLK_DOWN) camera->negativeTurn.y = 1;
       else if (windowEvent.type == SDL_KEYUP && windowEvent.key.keysym.sym == SDLK_DOWN) camera->negativeTurn.y = 0;
+      
+      if (windowEvent.type == SDL_KEYDOWN && windowEvent.key.keysym.sym == SDLK_n) test_particle_emitter->EmitParticleType(WATER);
+      else if (windowEvent.type == SDL_KEYUP && windowEvent.key.keysym.sym == SDLK_n) test_particle_emitter->EmitParticleType(FIRE);
     }
 
     //  Clear the screen to default color
@@ -333,8 +367,9 @@ int main(int argc, char ** argv) {
     frame++;
     t1 = SDL_GetTicks();
     if (t1 - t0 >= 1000.f) {
-      printf("Average Frames Per Second: %.1f\r", frame * 1000.f / (t1 - t0));
-      fflush(stdout);
+      printf("Average Frames Per Second: %.1f\nParticles: %6d\n",
+             frame * 1000.f / (t1 - t0), test_particle_emitter->GetNumParticles());
+
       t0 = t1;
       frame = 0;
     }
@@ -342,14 +377,15 @@ int main(int argc, char ** argv) {
 
   // Freeing memory
   delete camera;
+  delete test_particle_emitter;
+  delete test_particle;
 
   // Clean Up
   glDeleteProgram(shaderProgram);
   glDeleteShader(fragmentShader);
   glDeleteShader(vertexShader);
 
-  glDeleteBuffers(2, vbo);
-  glDeleteVertexArrays(1, &vao);
+  glDeleteVertexArrays(2, vao);
 
   SDL_GL_DeleteContext(context);
   SDL_Quit();
@@ -401,15 +437,21 @@ void Win2PPM(int width, int height) {
 void draw(float dt) {
   camera->updateCamera(dt, 800.f, 600.f);
   test_particle_emitter->UpdateParticleEmitter(dt);
-  
-  glBindVertexArray(vao);
+
 
   // I have gained understanding, as you can see by comparing my current code structure
   // and my previous code structure
   glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(camera->view));
   glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(camera->proj));
 
-  glm::mat4 model = glm::mat4();
+  glBindVertexArray(vao[0]);
+  glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(camera->view));
+  glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(camera->proj));
+  test_particle_emitter->Draw(uniModel);
+  glBindVertexArray(vao[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, static_cast<WaterParticle *>(test_particle)->vbo_[0]);
 
+  glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(camera->view));
+  glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(camera->proj));
   test_particle_emitter->DrawParticles(uniModel);
 }

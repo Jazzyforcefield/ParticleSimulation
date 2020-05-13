@@ -6,6 +6,7 @@
 // Standard library includes
 #include <vector>
 #include <iostream>
+#include <algorithm>
 
 // File library includes
 #include "glad/glad.h"
@@ -16,9 +17,10 @@
 // Created file includes
 #include "particle.h"
 #include "water_particle.h"
+#include "fire_particle.h"
 
-#define MAX_PARTICLES 100
-#define DEBUG 1
+#define MAX_PARTICLES 100000
+#define DEBUG 0
 
 class ParticleEmitter {
  public:
@@ -45,6 +47,9 @@ class ParticleEmitter {
   void ToggleVelocitySpread() { velocity_spread_enabled_ = !velocity_spread_enabled_; }
   void EmitParticleType(ParticleType type) { type_emitted_ = type; }
 
+  // Initialized the graphics
+  void InitGraphics();
+
   // Creates new particle, move to .cpp
   void CreateParticle();
 
@@ -57,6 +62,10 @@ class ParticleEmitter {
   // Draws all particles
   void DrawParticles(GLuint uniform_model);
 
+  // Draws everything
+  void Draw(GLuint uniform_model);
+  GLuint vbo_[1];
+
  private:
   // Emitter motion variables
   glm::vec3 position_;
@@ -66,6 +75,7 @@ class ParticleEmitter {
   // Particle spawning
   float particle_interval_;
   float elapsed_time_;
+  int particles_per_spawn_;
 
   // Particle properties
   float particle_lifetime_;
@@ -81,6 +91,10 @@ class ParticleEmitter {
   // Particle storage
   std::vector<Particle *> particles_;
   int num_particles_;
+
+  // Vertices
+  float vertices_[288];
+  GLuint vao_;
 
   friend class Particle;
 };

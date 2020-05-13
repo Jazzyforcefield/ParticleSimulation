@@ -8,7 +8,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-#define DEBUG 1
+#define DEBUG 0
 
 extern glm::vec3 eye_position;
 

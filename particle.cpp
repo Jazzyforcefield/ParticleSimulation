@@ -8,7 +8,7 @@ Particle::Particle() {
   velocity_ = glm::vec3();
   acceleration_ = glm::vec3();
 
-  lifetime_ = 2000.f;
+  lifetime_ = 2.f;
 }
 
 Particle::Particle(glm::vec3 position, glm::vec3 velocity,
