@@ -171,7 +171,7 @@ void WaterParticle::UpdateParticle(float dt) {
       }
     }
   }
-
+  
   if (position_.y < 0.001f) {
     glm::vec3 b = glm::dot(velocity_, glm::vec3(0.f, 1.f, 0.f)) *
                   glm::vec3(0.f, 1.f, 0.f);  // Temporary for floor bouncing
@@ -179,13 +179,13 @@ void WaterParticle::UpdateParticle(float dt) {
     position_.y = 0.005f;  // velocity_ * dt;
   }
   /*
-  if (position_.x > 5.f && position_.x < 30.f && position_.y < 10.f && fabs(position_.z + 5.f) < 0.001f) {
+  if (position_.x > 5.f && position_.x < 30.f && position_.y < 10.f && fabs(position_.z + 5.f) < 0.101f) {
     glm::vec3 b = glm::dot(velocity_, glm::vec3(0.f, 0.f, 1.f)) *
                   glm::vec3(0.f, 0.f, 1.f);  // Temporary for floor bouncing
     velocity_ = velocity_ - 1.7f * b;
     position_ += velocity_ * dt * 4.f;
-  }*/
-
+  }
+  */
 }
 
 void WaterParticle::DrawParticle(GLuint uniform_model) {
