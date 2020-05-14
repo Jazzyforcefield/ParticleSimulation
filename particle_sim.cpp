@@ -82,6 +82,7 @@ const GLchar* fragmentSource =
     "   outColor = vec4(diffuseC+ambC, 0.5);"
     "}";
 
+bool mouseDown = false;
 bool fullscreen = false;
 void Win2PPM(int width, int height);
 void draw(float dt);
@@ -322,8 +323,6 @@ int main(int argc, char ** argv) {
   unsigned t0 = SDL_GetTicks();
   unsigned t1 = t0;
 
-
-
   while (!quit) {
     while (SDL_PollEvent(&windowEvent)) {
       if (windowEvent.type == SDL_QUIT) quit = true; // Exit event loop
@@ -369,6 +368,16 @@ int main(int argc, char ** argv) {
       
       if (windowEvent.type == SDL_KEYDOWN && windowEvent.key.keysym.sym == SDLK_n) test_particle_emitter->EmitParticleType(WATER);
       else if (windowEvent.type == SDL_KEYUP && windowEvent.key.keysym.sym == SDLK_n) test_particle_emitter->EmitParticleType(FIRE);
+    
+      if (windowEvent.type == SDL_MOUSEBUTTONDOWN && windowEvent.button.button == SDL_BUTTON_LEFT) mouseDown = true; 
+      else if (windowEvent.type == SDL_MOUSEBUTTONUP) mouseDown = false; 
+
+      if (mouseDown && windowEvent.type == SDL_MOUSEMOTION) {
+        test_particle_emitter->SetPosition(
+            test_particle_emitter->GetPosition() +
+            glm::vec3((float)windowEvent.motion.xrel * 0.1f, 0.f,
+                      (float)windowEvent.motion.yrel * 0.1f));
+      }
     }
 
     //  Clear the screen to default color

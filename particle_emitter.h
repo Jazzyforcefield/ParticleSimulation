@@ -46,6 +46,7 @@ class ParticleEmitter {
   void ToggleLifetimeSpread() { lifetime_spread_enabled_ = !lifetime_spread_enabled_; }
   void ToggleVelocitySpread() { velocity_spread_enabled_ = !velocity_spread_enabled_; }
   void EmitParticleType(ParticleType type) { type_emitted_ = type; }
+  void SetPosition(glm::vec3 position) { position_ = position; }
 
   // Initialized the graphics
   void InitGraphics();
