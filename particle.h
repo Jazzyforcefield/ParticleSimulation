@@ -26,7 +26,7 @@ class Particle {
   Particle();
   Particle(glm::vec3 position, glm::vec3 velocity, glm::vec3 acceleration,
            float lifetime = 3.f, float size = 1.f);
-  ~Particle();
+  virtual ~Particle() = 0;
 
   // Accessors
   glm::vec3 GetPosition() { return position_; }

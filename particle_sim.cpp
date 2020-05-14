@@ -90,7 +90,7 @@ float aspect;  // aspect ratio (needs to be updated if the window is resized)
 GLint uniModel, uniView, uniProj; // Index of where to model, view, and projection matricies are stored on the GPU
 
 //  Vertex array and buffers
-GLuint vao[2];
+GLuint vao[3];
 GLuint vbo[2];
 
 /******** All other needed declarations and parameters ********/
@@ -120,19 +120,19 @@ int main(int argc, char ** argv) {
 
   // Test variables
   glm::vec3 position = glm::vec3(0.f, 0.f, 0.f);
-  glm::vec3 velocity = glm::vec3(0.f, 7.f, 0.f);
+  glm::vec3 velocity = glm::vec3(10.f, 10.f, -5.f);
   glm::vec3 velocity2 = glm::vec3(5.f, 10.f, 1.f);
-  glm::vec3 velocity3 = glm::vec3(0.f, 5.f, 0.f);
+  glm::vec3 velocity3 = glm::vec3(0.f, 7.f, 0.f);
   glm::vec3 acceleration = glm::vec3(0.f, 0.f, 0.f);
 
   // Benchmark
-  test_particle_emitter = new ParticleEmitter(position, velocity, 2.f, WATER);
+  test_particle_emitter = new ParticleEmitter(position, velocity, 5.f, WATER);
 
   // Normal
   //test_particle_emitter = new ParticleEmitter(position, velocity2, 5.f, WATER);
 
   // Fire
-  //test_particle_emitter = new ParticleEmitter(position, velocity3, 20.f, FIRE);
+  //test_particle_emitter = new ParticleEmitter(position, velocity3, 2.f, FIRE);
 
   test_particle_emitter->SetInterval(0.01f);
   test_particle_emitter->ToggleVelocitySpread();
@@ -175,11 +175,11 @@ int main(int argc, char ** argv) {
 
   // Initial vertex setup
   // Build a Vertex Array Object. This stores the VBO and attribute mappings in one object
-  glGenVertexArrays(2, vao); // Create a VAO
+  glGenVertexArrays(3, vao); // Create a VAO
   glBindVertexArray(vao[0]); // Bind the above created VAO to the current context
 
   // Allocate memory on the graphics card to store geometry (vertex buffer object)
-  //glGenBuffers(2, vbo);  // Create 2 buffers called vbo
+  glGenBuffers(2, vbo);  // Create 2 buffers called vbo
 
   
   
@@ -259,8 +259,8 @@ int main(int argc, char ** argv) {
 
 
   glBindVertexArray(vao[1]);
-  //glBindBuffer(GL_ARRAY_BUFFER, static_cast<FireParticle *>(test_particle)->vbo_[0]);
-  glBindBuffer(GL_ARRAY_BUFFER, static_cast<WaterParticle *>(test_particle)->vbo_[0]);
+  glBindBuffer(GL_ARRAY_BUFFER, static_cast<FireParticle *>(test_particle)->vbo_[0]);
+  //glBindBuffer(GL_ARRAY_BUFFER, static_cast<WaterParticle *>(test_particle)->vbo_[0]);
   GLint posAttrib2 = glGetAttribLocation(shaderProgram, "position");
   glVertexAttribPointer(posAttrib2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
                         0);  //  CHANGE THIS FOR ATTRIB
@@ -272,6 +272,28 @@ int main(int argc, char ** argv) {
   glVertexAttribPointer(colAttrib2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
       (void*)(3 * sizeof(float)));
   glEnableVertexAttribArray(colAttrib2);
+
+
+  float floor[] = {-100.f, 0.f, -100.f, 0.f, 1.5f, 0.f, 0.f, 0.f,
+                   -100.f, 0.f, 100.f,  0.f, 1.5f, 0.f, 0.f, 0.f,
+                   100.f,  0.f, -100.f, 0.f, 1.5f, 0.f, 0.f, 0.f,
+                   100.f,  0.f, 100.f,  0.f, 1.5f, 0.f, 0.f, 0.f};
+
+
+  glBindVertexArray(vao[2]);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+  glBufferData(GL_ARRAY_BUFFER, 32 * sizeof(float), floor, GL_STATIC_DRAW);
+  GLint posAttrib3 = glGetAttribLocation(shaderProgram, "position");
+  glVertexAttribPointer(posAttrib3, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+                        0);  //  CHANGE THIS FOR ATTRIB
+  // Attribute, vals/attrib., type, normalized?, stride, offset
+  // Binds to VBO current GL_ARRAY_BUFFER
+  glEnableVertexAttribArray(posAttrib3);
+
+    GLint colAttrib3 = glGetAttribLocation(shaderProgram, "inColor");
+  glVertexAttribPointer(colAttrib3, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+      (void*)(3 * sizeof(float)));
+  glEnableVertexAttribArray(colAttrib3);
 
 
 
@@ -385,7 +407,8 @@ int main(int argc, char ** argv) {
   glDeleteShader(fragmentShader);
   glDeleteShader(vertexShader);
 
-  glDeleteVertexArrays(2, vao);
+  glDeleteBuffers(2, vbo);
+  glDeleteVertexArrays(3, vao);
 
   SDL_GL_DeleteContext(context);
   SDL_Quit();
@@ -438,20 +461,49 @@ void draw(float dt) {
   camera->updateCamera(dt, 800.f, 600.f);
   test_particle_emitter->UpdateParticleEmitter(dt);
 
+  // Sorry for not using any real normals
 
-  // I have gained understanding, as you can see by comparing my current code structure
+  // I have gained more understanding, as you can see by comparing my current code structure
   // and my previous code structure
-  glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(camera->view));
-  glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(camera->proj));
 
   glBindVertexArray(vao[0]);
-  glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(camera->view));
-  glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(camera->proj));
-  test_particle_emitter->Draw(uniModel);
-  glBindVertexArray(vao[1]);
-    glBindBuffer(GL_ARRAY_BUFFER, static_cast<WaterParticle *>(test_particle)->vbo_[0]);
 
   glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(camera->view));
   glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(camera->proj));
+
+  test_particle_emitter->Draw(uniModel);
+
+
+  glBindVertexArray(vao[1]);
+  
+  glBindBuffer(GL_ARRAY_BUFFER, static_cast<WaterParticle *>(test_particle)->vbo_[0]);
+  //glBindBuffer(GL_ARRAY_BUFFER, static_cast<FireParticle *>(test_particle)->vbo_[0]);
+
   test_particle_emitter->DrawParticles(uniModel);
+
+
+  glBindVertexArray(vao[2]);
+  float floor[] = {-100.f, -0.1f, -100.f, 0.f, 0.5f, 0.f, 0.f, 0.f,
+                   -100.f, -0.1f, 100.f,  0.f, 0.5f, 0.f, 0.f, 0.f,
+                   100.f,  -0.1f, -100.f, 0.f, 0.5f, 0.f, 0.f, 0.f,
+                   100.f,  -0.1f, 100.f,  0.f, 0.5f, 0.f, 0.f, 0.f};
+
+  glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+  glBufferData(GL_ARRAY_BUFFER, 32 * sizeof(float), floor, GL_STATIC_DRAW);
+  glm::mat4 model = glm::mat4();
+
+  glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+  float wall[] = { 5.f, 10.f, -5.f, 0.f, 0.5f, 0.f, 0.f, 0.f,
+                   5.f, -0.1f, -5.f, 0.f, 0.5f, 0.f, 0.f, 0.f,
+                   30.f, 10.f, -5.f, 0.f, 0.5f, 0.f, 0.f, 0.f,
+                   30.f, -0.1f, -5.f, 0.f, 0.5f, 0.f, 0.f, 0.f};
+
+  glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+  glBufferData(GL_ARRAY_BUFFER, 32 * sizeof(float), wall, GL_STATIC_DRAW);
+
+  glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
 }

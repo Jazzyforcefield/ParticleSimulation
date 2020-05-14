@@ -145,17 +145,47 @@ void WaterParticle::UpdateParticle(float dt) {
   vertices_[27] = 5.f - lifetime_;
   vertices_[28] = 5.f - lifetime_;
 
+  glm::vec3 pt0 = position_;
+
   // Update position and velocity
   position_ += velocity_ * dt;
   velocity_ += acceleration_ * dt;
 
-  // Collisions here
+  glm::vec3 pt1 = position_;
+
+  glm::vec3 dir = pt1 - pt0;
+  glm::vec3 normz = glm::vec3(0.f, 0.f, 1.f);
+  float denominator = glm::dot(normz, dir);
+
+  if (fabs(denominator) > 0.001f) {
+    float t = glm::dot(glm::vec3(10.f, 5.f, -5.f) - pt0, normz) / denominator;
+    if (t <= 1.001f && t >= -0.001) {
+      glm::vec3 intersect = pt0 + t * dir;
+      // Collisions here
+      if (position_.x > 5.f && position_.x < 30.f &&
+          position_.y < 10.f) {
+        glm::vec3 b = glm::dot(velocity_, glm::vec3(0.f, 0.f, 1.f)) *
+                      glm::vec3(0.f, 0.f, 1.f);  // Temporary for floor bouncing
+        velocity_ = velocity_ - 1.7f * b;
+        position_ += velocity_ * dt * 4.f;
+      }
+    }
+  }
+
   if (position_.y < 0.001f) {
     glm::vec3 b = glm::dot(velocity_, glm::vec3(0.f, 1.f, 0.f)) *
                   glm::vec3(0.f, 1.f, 0.f);  // Temporary for floor bouncing
     velocity_ = velocity_ - 1.7f * b;
-    position_.y = 0.005f;//velocity_ * dt;
+    position_.y = 0.005f;  // velocity_ * dt;
   }
+  /*
+  if (position_.x > 5.f && position_.x < 30.f && position_.y < 10.f && fabs(position_.z + 5.f) < 0.001f) {
+    glm::vec3 b = glm::dot(velocity_, glm::vec3(0.f, 0.f, 1.f)) *
+                  glm::vec3(0.f, 0.f, 1.f);  // Temporary for floor bouncing
+    velocity_ = velocity_ - 1.7f * b;
+    position_ += velocity_ * dt * 4.f;
+  }*/
+
 }
 
 void WaterParticle::DrawParticle(GLuint uniform_model) {
