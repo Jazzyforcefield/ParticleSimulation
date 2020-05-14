@@ -10,3 +10,4 @@ A revisit of assignment 1, this time using C++.
 * Camera (your camera)
 * Bouncing off of wall and floor
 * CCD
+Note there is a second shorter video showing what I implemented after the first video.
